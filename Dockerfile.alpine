@@ -1,0 +1,24 @@
+# Docker image for the Drone build runner
+#
+#     docker build --file=Dockerfile.alpine --rm=true -t drone/drone-exec .
+
+FROM alpine:3.2
+
+ENV GOROOT=/usr/lib/go \
+    GOPATH=/gopath     \
+    GOBIN=/gopath/bin  \
+    CGO_ENABLED=0      \
+    PATH=$PATH:$GOROOT/bin:$GOPATH/bin
+
+WORKDIR /gopath/src/github.com/drone/drone-exec
+ADD . /gopath/src/github.com/drone/drone-exec
+
+RUN apk add -U go ca-certificates git && \
+  go get                              && \
+  go build -a -tags netgo             && \
+  apk del go                          && \
+  mv drone-exec /bin/drone-exec       && \
+  rm -rf /gopath                      && \
+  rm -rf /var/cache/apk/*
+
+ENTRYPOINT ["/bin/drone-exec"]
